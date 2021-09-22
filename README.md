@@ -3,4 +3,4 @@ This folder contains my VBA projects.
 
 📚 Happy to share knowledge.
 
-🛠 Enthusiast to receive comments To hoe to improve them.
+🛠 Enthusiast to receive comments about how to improve them.
