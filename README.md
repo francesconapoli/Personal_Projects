@@ -1,5 +1,5 @@
 # Personal_Projects
-This folder contains my personal project in VBA.
+This folder contains my VBA projects.
 
 📚 Happy to share knowledge.
 
