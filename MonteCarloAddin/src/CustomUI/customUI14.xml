@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui"
+          onLoad="OnRibbonLoad">
+
+  <ribbon>
+    <tabs>
+      <tab id="tabMCSim" label="MC Simulation" insertAfterMso="TabFormulas">
+
+        <!-- ============ DEFINE GROUP ============ -->
+        <group id="grpDefine" label="Define">
+
+          <button id="btnAddInput"
+                  label="Add Input"
+                  size="large"
+                  onAction="OnAddInput"
+                  getImage="GetImage"
+                  screentip="Add Distribution Input"
+                  supertip="Insert a probability distribution function into the selected cell. Choose from 25+ distributions including Normal, Triangular, PERT, Lognormal, Beta, Gamma, Weibull, and more." />
+
+          <button id="btnAddOutput"
+                  label="Add Output"
+                  size="large"
+                  onAction="OnAddOutput"
+                  getImage="GetImage"
+                  screentip="Add Simulation Output"
+                  supertip="Mark the selected cell as a simulation output. Output cells are tracked during simulation and their values are collected for statistical analysis." />
+
+          <separator id="sepDefine1" />
+
+          <button id="btnCorrelation"
+                  label="Correlations"
+                  size="normal"
+                  onAction="OnDefineCorrelation"
+                  getImage="GetImage"
+                  screentip="Define Input Correlations"
+                  supertip="Define Spearman rank correlations between input distributions. Correlations ensure that related uncertain variables move together during simulation." />
+
+          <button id="btnViewModel"
+                  label="Model Window"
+                  size="normal"
+                  onAction="OnViewModel"
+                  getImage="GetImage"
+                  screentip="View Model"
+                  supertip="View all defined inputs, outputs, and correlations in the current workbook." />
+
+        </group>
+
+        <!-- ============ SIMULATION GROUP ============ -->
+        <group id="grpSimulation" label="Simulation">
+
+          <button id="btnRunSim"
+                  label="Run"
+                  size="large"
+                  onAction="OnRunSimulation"
+                  getImage="GetImage"
+                  screentip="Run Simulation"
+                  supertip="Start Monte Carlo simulation with current settings. The simulation will iterate through all defined inputs and collect output values." />
+
+          <button id="btnPauseSim"
+                  label="Pause"
+                  size="normal"
+                  onAction="OnPauseSimulation"
+                  getImage="GetImage"
+                  screentip="Pause/Resume Simulation"
+                  supertip="Pause or resume the running simulation." />
+
+          <button id="btnStopSim"
+                  label="Stop"
+                  size="normal"
+                  onAction="OnStopSimulation"
+                  getImage="GetImage"
+                  screentip="Stop Simulation"
+                  supertip="Stop the simulation. Partial results will be available." />
+
+          <separator id="sepSim1" />
+
+          <button id="btnSettings"
+                  label="Settings"
+                  size="large"
+                  onAction="OnSimSettings"
+                  getImage="GetImage"
+                  screentip="Simulation Settings"
+                  supertip="Configure simulation parameters: number of iterations, sampling method (Monte Carlo or Latin Hypercube), random seed, convergence monitoring, and more." />
+
+        </group>
+
+        <!-- ============ RESULTS GROUP ============ -->
+        <group id="grpResults" label="Results">
+
+          <button id="btnBrowseResults"
+                  label="Browse Results"
+                  size="large"
+                  onAction="OnBrowseResults"
+                  getImage="GetImage"
+                  screentip="Browse Simulation Results"
+                  supertip="Open the results browser to view statistics, percentiles, and iteration data for each output." />
+
+          <button id="btnCharts"
+                  label="Charts"
+                  size="large"
+                  onAction="OnGenerateCharts"
+                  getImage="GetImage"
+                  screentip="Generate Charts"
+                  supertip="Generate histograms, cumulative distribution charts, overlay charts, tornado diagrams, spider plots, and scatter plots." />
+
+          <separator id="sepResults1" />
+
+          <button id="btnSensitivity"
+                  label="Sensitivity"
+                  size="normal"
+                  onAction="OnSensitivity"
+                  getImage="GetImage"
+                  screentip="Sensitivity Analysis"
+                  supertip="Run sensitivity analysis using regression, rank correlation, or contribution to variance methods. Generate tornado and spider charts." />
+
+          <button id="btnStatistics"
+                  label="Statistics"
+                  size="normal"
+                  onAction="OnStatisticsReport"
+                  getImage="GetImage"
+                  screentip="Statistics Report"
+                  supertip="Generate a detailed statistics report for all outputs including mean, std dev, percentiles, skewness, and kurtosis." />
+
+          <button id="btnExportData"
+                  label="Export Data"
+                  size="normal"
+                  onAction="OnExportData"
+                  getImage="GetImage"
+                  screentip="Export Raw Data"
+                  supertip="Export all iteration data to a new worksheet for further analysis." />
+
+          <separator id="sepResults2" />
+
+          <button id="btnReset"
+                  label="Reset"
+                  size="normal"
+                  onAction="OnReset"
+                  getImage="GetImage"
+                  screentip="Reset Simulation"
+                  supertip="Clear all simulation results and reset to initial state." />
+
+        </group>
+
+      </tab>
+    </tabs>
+  </ribbon>
+
+</customUI>
