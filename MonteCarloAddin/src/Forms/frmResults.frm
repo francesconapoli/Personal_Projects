@@ -1,18 +1,3 @@
-VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmResults
-   Caption         =   "Simulation Results"
-   ClientHeight    =   8400
-   ClientLeft      =   45
-   ClientTop       =   390
-   ClientWidth     =   7200
-   OleObjectBlob   =   "frmResults.frx":0000
-   StartUpPosition =   1  'CenterOwner
-End
-Attribute VB_Name = "frmResults"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 '===============================================================================
 ' Form: frmResults
 ' Purpose: Results browser - shows statistics and charts for selected output

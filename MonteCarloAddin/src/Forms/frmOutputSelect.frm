@@ -1,18 +1,3 @@
-VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmOutputSelect
-   Caption         =   "Select Output"
-   ClientHeight    =   3000
-   ClientLeft      =   45
-   ClientTop       =   390
-   ClientWidth     =   3600
-   OleObjectBlob   =   "frmOutputSelect.frx":0000
-   StartUpPosition =   1  'CenterOwner
-End
-Attribute VB_Name = "frmOutputSelect"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 '===============================================================================
 ' Form: frmOutputSelect
 ' Purpose: Simple output selector dialog
