@@ -112,6 +112,9 @@ NextLine:
         If Len(Trim(codePart)) > 0 Then cm.AddFromString codePart
     End If
 
+    ' Lock VBA project with password
+    LockVBAProject wb, "MCSimAddin2024"
+
     ' Save as XLAM
     Dim savePath As String
     savePath = Application.DefaultFilePath & "\MCSimAddin.xlam"
@@ -129,6 +132,41 @@ NextLine:
            "4. Check it and click OK", vbInformation, "MCSimAddin"
 
     wb.Close False
+End Sub
+
+Private Sub LockVBAProject(wb As Workbook, ByVal pwd As String)
+    ' Locks the VBA project using SendKeys to automate the Project Properties dialog.
+    ' The VBA object model does not expose a direct way to set a project password.
+    On Error GoTo LockError
+
+    Dim vbProj As Object
+    Set vbProj = wb.VBProject
+
+    ' Activate the VBE and select the project
+    Application.VBE.MainWindow.Visible = True
+    Application.VBE.MainWindow.SetFocus
+    vbProj.VBComponents(1).Activate
+
+    ' Open Project Properties > Protection tab via menu
+    ' Tools > VBAProject Properties = Alt+T, E
+    ' Then Tab to Protection tab, check Lock, enter password twice, Enter
+    SendKeys "%TE", True          ' Tools > VBAProject Properties
+    SendKeys "^{TAB}", True       ' Switch to Protection tab
+    SendKeys " ", True            ' Check "Lock project for viewing"
+    SendKeys "{TAB}", True        ' Move to Password field
+    SendKeys pwd, True            ' Type password
+    SendKeys "{TAB}", True        ' Move to Confirm Password field
+    SendKeys pwd, True            ' Confirm password
+    SendKeys "{ENTER}", True      ' OK
+
+    Application.VBE.MainWindow.Visible = False
+    Debug.Print "  VBA project locked."
+    Exit Sub
+
+LockError:
+    Debug.Print "  WARNING: Could not lock VBA project: " & Err.Description
+    On Error Resume Next
+    Application.VBE.MainWindow.Visible = False
 End Sub
 
 Private Sub BuildFormFromCode(vbProj As Object, filePath As String, fso As Object)
