@@ -355,16 +355,25 @@ Private Function StripHeaderLines(ByVal txt As String) As String
     lines = Split(txt, vbCrLf)
     Dim result As String
     Dim inCode As Boolean
+    Dim inBeginBlock As Boolean
     inCode = False
+    inBeginBlock = False
     Dim i As Long
     For i = 0 To UBound(lines)
         Dim tl As String
         tl = Trim(lines(i))
         If Not inCode Then
+            ' Track BEGIN...END blocks and skip everything inside
+            If Left(tl, 5) = "BEGIN" Or Left(tl, 5) = "Begin" Then
+                inBeginBlock = True
+                GoTo SkipLine
+            End If
+            If inBeginBlock Then
+                If tl = "END" Or tl = "End" Then inBeginBlock = False
+                GoTo SkipLine
+            End If
             If Left(tl, 9) = "Attribute" Then GoTo SkipLine
             If Left(tl, 7) = "VERSION" Then GoTo SkipLine
-            If Left(tl, 5) = "BEGIN" Or Left(tl, 5) = "Begin" Then GoTo SkipLine
-            If tl = "END" Or tl = "End" Then GoTo SkipLine
             If tl = "" Then GoTo SkipLine
             inCode = True
         End If
