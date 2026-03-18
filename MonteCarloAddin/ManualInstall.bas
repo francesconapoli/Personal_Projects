@@ -53,21 +53,15 @@ Public Sub InstallMCSimAddin()
         Next
     End If
 
-    ' Import forms
+    ' Build forms programmatically (direct .frm import requires .frx binary files)
     Dim formsPath As String
     formsPath = SOURCE_PATH & "\Forms"
 
     If fso.FolderExists(formsPath) Then
         For Each f In fso.GetFolder(formsPath).Files
             If LCase(fso.GetExtensionName(f.Name)) = "frm" Then
-                Debug.Print "Importing: " & f.Name
-                On Error Resume Next
-                vbProj.VBComponents.Import f.Path
-                If Err.Number <> 0 Then
-                    Debug.Print "  ERROR: " & Err.Description
-                    Err.Clear
-                End If
-                On Error GoTo 0
+                Debug.Print "Building form: " & f.Name
+                BuildFormFromFile vbProj, f.Path, fso
             End If
         Next
     End If
@@ -124,4 +118,96 @@ Public Sub InstallMCSimAddin()
            "4. Check it and click OK", vbInformation, "MCSimAddin"
 
     wb.Close False
+End Sub
+
+Private Sub BuildFormFromFile(vbProj As Object, filePath As String, fso As Object)
+    ' Reads a .frm file, creates a blank UserForm, and injects the VBA code.
+    ' This avoids the need for .frx companion files.
+    On Error GoTo ErrHandler
+
+    Dim ts As Object
+    Set ts = fso.OpenTextFile(filePath, 1)
+    Dim content As String
+    content = ts.ReadAll
+    ts.Close
+
+    Dim allLines() As String
+    allLines = Split(content, vbCrLf)
+    If UBound(allLines) < 1 Then
+        allLines = Split(content, vbLf)
+    End If
+
+    ' Get form name from filename
+    Dim formName As String
+    formName = fso.GetBaseName(filePath)
+
+    ' Extract caption from the header block
+    Dim caption As String
+    caption = ""
+    Dim i As Long
+    For i = 0 To UBound(allLines)
+        Dim trimLine As String
+        trimLine = Trim(allLines(i))
+        If Left(trimLine, 7) = "Caption" Then
+            Dim qStart As Long, qEnd As Long
+            qStart = InStr(trimLine, """")
+            qEnd = InStrRev(trimLine, """")
+            If qStart > 0 And qEnd > qStart Then
+                caption = Mid(trimLine, qStart + 1, qEnd - qStart - 1)
+            End If
+        End If
+        If trimLine = "End" Then Exit For
+    Next i
+
+    ' Create blank UserForm (vbext_ct_MSForm = 3)
+    Dim formComp As Object
+    Set formComp = vbProj.VBComponents.Add(3)
+    formComp.Name = formName
+
+    ' Set caption
+    If Len(caption) > 0 Then
+        On Error Resume Next
+        formComp.Designer.caption = caption
+        On Error GoTo ErrHandler
+    End If
+
+    ' Extract VBA code: skip Begin...End header block and Attribute lines
+    Dim codeText As String
+    codeText = ""
+    Dim pastHeader As Boolean
+    Dim pastAttributes As Boolean
+    pastHeader = False
+    pastAttributes = False
+
+    For i = 0 To UBound(allLines)
+        trimLine = Trim(allLines(i))
+        If Not pastHeader Then
+            If trimLine = "End" Then pastHeader = True
+        ElseIf Not pastAttributes Then
+            If Left(trimLine, 9) = "Attribute" Then
+                ' skip
+            Else
+                pastAttributes = True
+                codeText = codeText & allLines(i) & vbCrLf
+            End If
+        Else
+            codeText = codeText & allLines(i) & vbCrLf
+        End If
+    Next i
+
+    ' Trim leading/trailing whitespace
+    codeText = Trim(codeText)
+
+    If Len(codeText) > 0 Then
+        Dim cm As Object
+        Set cm = formComp.CodeModule
+        If cm.CountOfLines > 0 Then cm.DeleteLines 1, cm.CountOfLines
+        cm.AddFromString codeText
+    End If
+
+    Debug.Print "  Created: " & formName
+    Exit Sub
+
+ErrHandler:
+    Debug.Print "  ERROR building " & formName & ": " & Err.Description
 End Sub
