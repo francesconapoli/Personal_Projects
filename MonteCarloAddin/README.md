@@ -97,7 +97,8 @@ A comprehensive Monte Carlo simulation add-in for Microsoft Excel that replicate
 - **Correlation Support** - Spearman rank correlations between inputs (Iman-Conover method)
 - **Model Window** - View all inputs, outputs, and correlations
 - **Data Export** - Export raw iteration data to worksheet
-- **Custom Ribbon Tab** - Full UI with Define, Simulation, and Results groups
+- **Auto-building Toolbar** - CommandBar-based toolbar that works out of the box (no RibbonX Editor needed)
+- **Optional Ribbon Tab** - Native ribbon XML for a full "MC Simulation" tab (via PowerShell script)
 
 ## Installation
 
@@ -122,11 +123,11 @@ A comprehensive Monte Carlo simulation add-in for Microsoft Excel that replicate
    cscript BuildAddin.vbs
    ```
 
-3. **Install the Ribbon** (optional, for custom tab):
-   - Download [Office RibbonX Editor](https://github.com/fernandreu/office-ribbonx-editor)
-   - Open `MCSimAddin.xlam` in the editor
-   - Insert `src/CustomUI/customUI14.xml` as `customUI14`
-   - Save
+3. **Optional: Add native ribbon tab** (not required — a CommandBar toolbar is built automatically):
+   ```powershell
+   .\InjectRibbonXml.ps1
+   ```
+   This injects the customUI XML into the XLAM (it's a ZIP file) to add a native "MC Simulation" ribbon tab.
 
 4. **Activate the add-in**:
    - Excel > File > Options > Add-ins
@@ -203,7 +204,8 @@ MonteCarloAddin/
 │   │   ├── modSensitivity.bas       # Sensitivity analysis methods
 │   │   ├── modCharting.bas          # Chart generation (histogram, tornado, etc.)
 │   │   ├── modDistFitting.bas       # Distribution fitting (KS test)
-│   │   └── modRibbonCallbacks.bas   # Ribbon UI callback procedures
+│   │   ├── modRibbonCallbacks.bas   # Ribbon UI callback procedures (for optional ribbon)
+│   │   └── modToolbar.bas           # CommandBar toolbar (auto-builds, no external tools)
 │   ├── Forms/
 │   │   ├── frmSettings.frm          # Simulation settings dialog
 │   │   ├── frmResults.frm           # Results browser with stats & charts
@@ -217,6 +219,7 @@ MonteCarloAddin/
 │   └── ThisWorkbook.cls             # Workbook event handlers
 ├── BuildAddin.ps1                   # PowerShell build script
 ├── BuildAddin.vbs                   # VBScript build script
+├── InjectRibbonXml.ps1              # Optional: inject ribbon XML into XLAM
 ├── ManualInstall.bas                # Manual install macro
 ├── SampleModel.bas                  # Sample model generator
 └── README.md                        # This file

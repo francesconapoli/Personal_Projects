@@ -14,15 +14,17 @@ Attribute VB_Exposed = True
 Option Explicit
 
 Private Sub Workbook_Open()
-    ' Initialize default settings
+    ' Initialize default settings and build the toolbar
     InitializeDefaults
-    Application.StatusBar = ADDIN_NAME & " v" & ADDIN_VERSION & " loaded."
+    CreateToolbar
+    Application.StatusBar = ADDIN_NAME & " v" & ADDIN_VERSION & " loaded. See 'MC Simulation' toolbar."
 End Sub
 
 Private Sub Workbook_AddinInstall()
     InitializeDefaults
+    CreateToolbar
     MsgBox ADDIN_NAME & " v" & ADDIN_VERSION & " installed successfully!" & vbCrLf & vbCrLf & _
-           "Look for the 'MC Simulation' tab in the ribbon." & vbCrLf & vbCrLf & _
+           "Look for the 'MC Simulation' toolbar at the top of Excel." & vbCrLf & vbCrLf & _
            "Available worksheet functions:" & vbCrLf & _
            "  MCNormal, MCUniform, MCTriang, MCLognorm, MCPERT," & vbCrLf & _
            "  MCBeta, MCGamma, MCWeibull, MCExpon, MCPoisson," & vbCrLf & _
@@ -32,6 +34,7 @@ Private Sub Workbook_AddinInstall()
 End Sub
 
 Private Sub Workbook_AddinUninstall()
+    RemoveToolbar
     Application.StatusBar = False
 End Sub
 
@@ -43,5 +46,6 @@ Private Sub Workbook_BeforeClose(Cancel As Boolean)
         End If
         StopSimulation
     End If
+    RemoveToolbar
     Application.StatusBar = False
 End Sub
