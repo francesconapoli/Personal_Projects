@@ -46,6 +46,7 @@ Public Enum DistributionType
     dtChiSquared = 16
     dtStudentT = 17
     ' Discrete
+    dtBernoulli = 29
     dtBinomial = 30
     dtPoisson = 31
     dtNegBinomial = 32

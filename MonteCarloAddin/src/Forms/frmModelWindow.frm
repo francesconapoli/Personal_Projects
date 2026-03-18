@@ -125,6 +125,7 @@ Private Function GetDistName(ByVal dt As DistributionType) As String
         Case dtExtValueMin: GetDistName = "Ext Value Min"
         Case dtChiSquared: GetDistName = "Chi-Squared"
         Case dtStudentT: GetDistName = "Student-t"
+        Case dtBernoulli: GetDistName = "Bernoulli"
         Case dtBinomial: GetDistName = "Binomial"
         Case dtPoisson: GetDistName = "Poisson"
         Case dtNegBinomial: GetDistName = "Neg Binomial"

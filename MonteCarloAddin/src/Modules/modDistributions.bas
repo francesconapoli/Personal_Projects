@@ -247,6 +247,21 @@ End Function
 ' DISCRETE DISTRIBUTIONS
 '===============================================================================
 
+'--- Bernoulli Distribution ---
+Public Function MCBernoulli(ByVal p As Double) As Variant
+Attribute MCBernoulli.VB_Description = "Bernoulli distribution returning 1 with probability p, 0 otherwise."
+    If g_SimState = ssRunning Then
+        If MT_Random() < p Then
+            MCBernoulli = 1
+        Else
+            MCBernoulli = 0
+        End If
+        RegisterInputAuto Application.Caller, dtBernoulli, p, 0#
+    Else
+        MCBernoulli = CLng(p >= 0.5)
+    End If
+End Function
+
 '--- Binomial Distribution ---
 Public Function MCBinomial(ByVal n As Long, ByVal p As Double) As Variant
 Attribute MCBinomial.VB_Description = "Binomial distribution with n trials and probability p."

@@ -277,6 +277,7 @@ Private Function DetectDistType(ByVal formula As String) As DistributionType
     If InStr(formula, "MCWEIBULL") > 0 Then DetectDistType = dtWeibull
     If InStr(formula, "MCGAMMA") > 0 Then DetectDistType = dtGamma
     If InStr(formula, "MCBETA") > 0 Then DetectDistType = dtBeta
+    If InStr(formula, "MCBERNOULLI") > 0 Then DetectDistType = dtBernoulli
     If InStr(formula, "MCBINOMIAL") > 0 Then DetectDistType = dtBinomial
     If InStr(formula, "MCPOISSON") > 0 Then DetectDistType = dtPoisson
 End Function

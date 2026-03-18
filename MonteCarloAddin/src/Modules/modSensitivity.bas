@@ -265,6 +265,8 @@ Private Function GenerateSampleForType(ByVal dt As DistributionType, ByRef param
             GenerateSampleForType = params(0) + (params(2) - params(0)) * x / (x + y)
         Case dtPoisson
             GenerateSampleForType = params(0) + Sqr(params(0)) * RandNormal01()
+        Case dtBernoulli
+            If MT_Random() < params(0) Then GenerateSampleForType = 1 Else GenerateSampleForType = 0
         Case dtBinomial
             GenerateSampleForType = params(0) * params(1) + Sqr(params(0) * params(1) * (1# - params(1))) * RandNormal01()
         Case Else
