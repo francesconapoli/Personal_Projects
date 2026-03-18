@@ -18,7 +18,8 @@ Attribute VB_Name = "ManualInstall"
 Option Explicit
 
 ' *** CHANGE THIS PATH to where you extracted the project ***
-Private Const SOURCE_PATH As String = "C:\Users\YourName\MonteCarloAddin\src"
+' Can point to the MonteCarloAddin folder OR the src subfolder - both work.
+Private Const SOURCE_PATH As String = "C:\Users\YourName\MonteCarloAddin"
 
 Private m_FormCount As Long
 Private m_ModuleCount As Long
@@ -34,6 +35,27 @@ Public Sub InstallMCSimAddin()
         Exit Sub
     End If
 
+    ' Auto-detect the correct base path
+    ' Works whether SOURCE_PATH points to MonteCarloAddin or MonteCarloAddin\src
+    Dim basePath As String
+    basePath = SOURCE_PATH
+    If fso.FolderExists(basePath & "\src\Modules") Then
+        basePath = basePath & "\src"
+    ElseIf Not fso.FolderExists(basePath & "\Modules") Then
+        ' Try one more: maybe they pointed to the repo root containing MonteCarloAddin
+        If fso.FolderExists(basePath & "\MonteCarloAddin\src\Modules") Then
+            basePath = basePath & "\MonteCarloAddin\src"
+        Else
+            MsgBox "Cannot find Modules folder." & vbCrLf & vbCrLf & _
+                   "Looked in:" & vbCrLf & _
+                   "  " & SOURCE_PATH & "\Modules" & vbCrLf & _
+                   "  " & SOURCE_PATH & "\src\Modules" & vbCrLf & vbCrLf & _
+                   "Set SOURCE_PATH to the folder containing the Modules and Forms subfolders.", _
+                   vbCritical, "MCSimAddin Installer"
+            Exit Sub
+        End If
+    End If
+
     m_FormCount = 0
     m_ModuleCount = 0
     m_Errors = ""
@@ -47,7 +69,7 @@ Public Sub InstallMCSimAddin()
 
     ' ---- Step 1: Import standard modules (.bas files) ----
     Dim modulesPath As String
-    modulesPath = SOURCE_PATH & "\Modules"
+    modulesPath = basePath & "\Modules"
 
     If fso.FolderExists(modulesPath) Then
         Dim f As Object
@@ -73,7 +95,7 @@ Public Sub InstallMCSimAddin()
     ' The .frm files contain pure VBA code (no designer headers).
     ' All controls are created dynamically in UserForm_Initialize.
     Dim formsPath As String
-    formsPath = SOURCE_PATH & "\Forms"
+    formsPath = basePath & "\Forms"
 
     If fso.FolderExists(formsPath) Then
         For Each f In fso.GetFolder(formsPath).Files
@@ -87,7 +109,7 @@ Public Sub InstallMCSimAddin()
 
     ' ---- Step 3: Update ThisWorkbook code ----
     Dim twbPath As String
-    twbPath = SOURCE_PATH & "\ThisWorkbook.cls"
+    twbPath = basePath & "\ThisWorkbook.cls"
     If fso.FileExists(twbPath) Then
         Dim twbCode As String
         twbCode = ReadFileText(fso, twbPath)
