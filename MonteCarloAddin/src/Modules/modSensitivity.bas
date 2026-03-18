@@ -185,10 +185,6 @@ Private Function EstimateInputOutputCorrelation(ByVal inputIdx As Long, _
     ReDim inputSamples(1 To n)
     Dim i As Long
 
-    ' Save and restore MT state
-    Dim savedState As Boolean
-    savedState = True
-
     ' Generate samples from the input distribution
     Dim dt As DistributionType
     dt = g_Inputs(inputIdx).DistType

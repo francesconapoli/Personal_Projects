@@ -6,6 +6,7 @@
 Option Explicit
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Model Window"
     Me.Width = 450
     Me.Height = 500
 

@@ -7,6 +7,7 @@ Option Explicit
 Private m_CurrentOutput As Long
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Simulation Results"
     Me.Width = 680
     Me.Height = 620
 
@@ -53,13 +54,23 @@ Private Sub UserForm_Initialize()
                     "lblValMax", "lblValMedian", "lblValMode", "lblValSkewness", "lblValKurtosis")
 
     Dim y As Long
+    Dim colLeft As Long, colValLeft As Long
     y = 18
     For i = 0 To UBound(statLabels)
+        ' First 5 items in left column, next 4 in right column
+        If i <= 4 Then
+            colLeft = 12
+            colValLeft = 100
+        Else
+            colLeft = 220
+            colValLeft = 310
+        End If
+
         Dim lbl As MSForms.Label
         Set lbl = fraStats.Controls.Add("Forms.Label.1", CStr(statNames(i)))
         With lbl
             .Caption = CStr(statLabels(i))
-            .Left = 12: .Top = y: .Width = 80: .Height = 15
+            .Left = colLeft: .Top = y: .Width = 85: .Height = 15
             .Font.Bold = True
         End With
 
@@ -67,12 +78,12 @@ Private Sub UserForm_Initialize()
         Set val = fraStats.Controls.Add("Forms.Label.1", CStr(valNames(i)))
         With val
             .Caption = ""
-            .Left = 100: .Top = y: .Width = 100: .Height = 15
+            .Left = colValLeft: .Top = y: .Width = 100: .Height = 15
             .TextAlign = fmTextAlignRight
         End With
 
         If i = 4 Then
-            y = 18 ' Reset for right column
+            y = 18 ' Reset y for right column
         Else
             y = y + 22
         End If

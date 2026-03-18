@@ -7,6 +7,7 @@ Option Explicit
 Public SelectedIndex As Long
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Select Output"
     Me.Width = 320
     Me.Height = 260
     SelectedIndex = -1

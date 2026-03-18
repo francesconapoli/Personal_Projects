@@ -5,6 +5,7 @@
 Option Explicit
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Sensitivity Analysis"
     Me.Width = 520
     Me.Height = 450
 

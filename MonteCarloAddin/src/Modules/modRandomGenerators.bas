@@ -115,10 +115,6 @@ Public Function NormalCDF(ByVal x As Double) As Double
     Dim t As Double, z As Double, p As Double
     z = Abs(x)
     t = 1# / (1# + 0.2316419 * z)
-    p = t * (0.319381530# + t * (-0.356563782# + t * (1.781477937# + _
-        t * (-1.821255978# + t * 1.330274429#))))
-    p = 1# - SQRT2PI * Exp(-0.5 * z * z) * p
-    ' Correction: need to divide by sqrt(2*pi) properly
     p = 1# - (1# / SQRT2PI) * Exp(-0.5 * z * z) * (t * (0.319381530# + t * (-0.356563782# + t * (1.781477937# + _
         t * (-1.821255978# + t * 1.330274429#)))))
     If x < 0 Then p = 1# - p

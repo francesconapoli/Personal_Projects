@@ -6,6 +6,7 @@
 Option Explicit
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Add Input Distribution"
     Me.Width = 480
     Me.Height = 440
 

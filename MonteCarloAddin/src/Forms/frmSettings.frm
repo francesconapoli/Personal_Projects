@@ -6,6 +6,7 @@ Option Explicit
 
 Private Sub UserForm_Initialize()
     ' ---- Create controls programmatically ----
+    Me.Caption = "Simulation Settings"
     Me.Width = 400
     Me.Height = 460
 

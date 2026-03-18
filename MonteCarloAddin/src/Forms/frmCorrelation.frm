@@ -5,6 +5,7 @@
 Option Explicit
 
 Private Sub UserForm_Initialize()
+    Me.Caption = "Define Correlations"
     Me.Width = 500
     Me.Height = 400
 
