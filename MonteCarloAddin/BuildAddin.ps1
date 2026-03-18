@@ -45,93 +45,80 @@ try {
         }
     }
 
-    # Build forms by creating blank UserForms and injecting code
-    # (.frm files cannot be imported without companion .frx binary files)
+    # Import forms - try direct .frm import first (requires .frx companion files),
+    # fall back to programmatic creation if import fails
     $formsDir = Join-Path $srcDir "Forms"
     if (Test-Path $formsDir) {
-        # vbext_ct_MSForm = 3
         Get-ChildItem -Path $formsDir -Filter "*.frm" | ForEach-Object {
-            Write-Host "  + $($_.Name) (building form)" -ForegroundColor Green
+            Write-Host "  + $($_.Name)" -ForegroundColor Green
+            $imported = $false
+
+            # Method 1: Direct import (works if .frx file exists alongside .frm)
             try {
-                $content = Get-Content $_.FullName -Raw
-                $lines = $content -split "`r?`n"
+                $vbProj.VBComponents.Import($_.FullName) | Out-Null
+                $imported = $true
+                Write-Host "    Imported directly" -ForegroundColor Gray
+            } catch {
+                Write-Host "    Direct import failed, building programmatically..." -ForegroundColor Gray
+            }
 
-                # Extract form name from header: Begin {GUID} formName
-                $formName = $null
-                $caption = $null
-                $clientHeight = $null
-                $clientWidth = $null
-                foreach ($line in $lines) {
-                    if ($line -match '^\s*Begin\s+\{[^}]+\}\s+(\w+)') {
-                        $formName = $Matches[1]
-                    }
-                    if ($line -match '^\s*Caption\s+=\s+"([^"]+)"') {
-                        $caption = $Matches[1]
-                    }
-                    if ($line -match '^\s*ClientHeight\s+=\s+(\d+)') {
-                        $clientHeight = [int]$Matches[1]
-                    }
-                    if ($line -match '^\s*ClientWidth\s+=\s+(\d+)') {
-                        $clientWidth = [int]$Matches[1]
-                    }
-                    if ($line -match '^End$') { break }
-                }
+            # Method 2: Create blank UserForm and inject code
+            if (-not $imported) {
+                try {
+                    $content = Get-Content $_.FullName -Raw
+                    $lines = $content -split "`r?`n"
+                    $formName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
 
-                if (-not $formName) {
-                    Write-Host "    WARNING: Could not parse form name from $($_.Name)" -ForegroundColor Yellow
-                    return
-                }
-
-                # Create a blank UserForm component
-                $formComp = $vbProj.VBComponents.Add(3)  # 3 = vbext_ct_MSForm
-                $formComp.Name = $formName
-
-                # Set form properties from the header
-                if ($caption) {
-                    $formComp.Properties.Item("Caption").Value = $caption
-                }
-                if ($clientHeight) {
-                    # Convert twips to points (1 twip = 1/20 point)
-                    $formComp.Properties.Item("Height").Value = [math]::Round($clientHeight / 20, 1)
-                }
-                if ($clientWidth) {
-                    $formComp.Properties.Item("Width").Value = [math]::Round($clientWidth / 20, 1)
-                }
-
-                # Extract VBA code (everything after the Attribute lines)
-                $codeLines = @()
-                $pastHeader = $false
-                $pastAttributes = $false
-                foreach ($line in $lines) {
-                    if (-not $pastHeader) {
-                        # Skip until we're past the "End" of the Begin block
-                        if ($line -match '^End$') {
-                            $pastHeader = $true
+                    # Extract caption from header
+                    $caption = $null
+                    foreach ($line in $lines) {
+                        if ($line -match '^\s*Caption\s+=\s+"([^"]+)"') {
+                            $caption = $Matches[1]
                         }
-                        continue
+                        if ($line -match '^End$') { break }
                     }
-                    if (-not $pastAttributes) {
-                        # Skip Attribute lines
-                        if ($line -match '^Attribute\s+') {
+
+                    # Create blank UserForm (vbext_ct_MSForm = 3)
+                    $formComp = $vbProj.VBComponents.Add(3)
+                    $formComp.Name = $formName
+
+                    # Set caption via Designer
+                    try {
+                        if ($caption) {
+                            $formComp.Designer.Caption = $caption
+                        }
+                    } catch {}
+
+                    # Extract VBA code: skip Begin...End header and Attribute lines
+                    $codeLines = @()
+                    $pastHeader = $false
+                    $pastAttributes = $false
+                    foreach ($line in $lines) {
+                        if (-not $pastHeader) {
+                            if ($line -match '^End$') { $pastHeader = $true }
                             continue
                         }
-                        $pastAttributes = $true
+                        if (-not $pastAttributes) {
+                            if ($line -match '^Attribute\s+') { continue }
+                            $pastAttributes = $true
+                        }
+                        $codeLines += $line
                     }
-                    $codeLines += $line
-                }
-                $codeText = ($codeLines -join "`r`n").Trim()
+                    $codeText = ($codeLines -join "`r`n").Trim()
 
-                if ($codeText.Length -gt 0) {
-                    $cm = $formComp.CodeModule
-                    if ($cm.CountOfLines -gt 0) {
-                        $cm.DeleteLines(1, $cm.CountOfLines)
+                    if ($codeText.Length -gt 0) {
+                        $cm = $formComp.CodeModule
+                        if ($cm.CountOfLines -gt 0) {
+                            $cm.DeleteLines(1, $cm.CountOfLines)
+                        }
+                        $cm.AddFromString($codeText)
                     }
-                    $cm.AddFromString($codeText)
-                }
 
-                Write-Host "    Created: $formName" -ForegroundColor Gray
-            } catch {
-                Write-Host "    WARNING: $($_.Exception.Message)" -ForegroundColor Yellow
+                    Write-Host "    Created: $formName" -ForegroundColor Green
+                } catch {
+                    Write-Host "    WARNING: $($_.Exception.Message)" -ForegroundColor Yellow
+                    Write-Host "    $($_.ScriptStackTrace)" -ForegroundColor DarkYellow
+                }
             }
         }
     }
