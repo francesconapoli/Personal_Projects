@@ -3,35 +3,43 @@
 ' Purpose: Shows all defined inputs, outputs, and correlations
 '          Mirrors @RISK's Model Window
 '===============================================================================
+'@FORM:450,500,Model Window
+'@CTRL:Label,lblInputs,,12,8,200,15,Inputs:
+'@SET:lblInputs,Font.Bold,True
+'@SET:lblInputs,Font.Size,10
+'@CTRL:ListBox,lstInputs,,12,26,410,140
+'@SET:lstInputs,ColumnCount,3
+'@SET:lstInputs,ColumnWidths,100;100;180
+'@CTRL:Label,lblOutputs,,12,176,200,15,Outputs:
+'@SET:lblOutputs,Font.Bold,True
+'@SET:lblOutputs,Font.Size,10
+'@CTRL:ListBox,lstOutputs,,12,194,410,100
+'@SET:lstOutputs,ColumnCount,2
+'@SET:lstOutputs,ColumnWidths,150;250
+'@CTRL:Label,lblCorrelations,,12,305,200,15,Correlations:
+'@SET:lblCorrelations,Font.Bold,True
+'@SET:lblCorrelations,Font.Size,10
+'@CTRL:ListBox,lstCorrelations,,12,323,410,80
+'@SET:lstCorrelations,ColumnCount,3
+'@SET:lstCorrelations,ColumnWidths,150;150;60
+'@CTRL:CommandButton,btnRefresh,,250,420,80,28,Refresh
+'@CTRL:CommandButton,btnClose,,340,420,80,28,Close
+'@SET:btnClose,Cancel,True
+'@END
 Option Explicit
 
 Private Sub UserForm_Initialize()
-    Me.Caption = "Model Window"
-    Me.Width = 450
-    Me.Height = 500
-
     ' Scan workbook
     ScanWorkbookForFunctions
 
-    ' Inputs section
-    Dim lblInputs As MSForms.Label
-    Set lblInputs = Me.Controls.Add("Forms.Label.1", "lblInputs")
-    With lblInputs
-        .Caption = "Inputs (" & g_InputCount & " found):"
-        .Left = 12: .Top = 8: .Width = 200: .Height = 15
-        .Font.Bold = True
-        .Font.Size = 10
-    End With
-
-    Dim lstInputs As MSForms.ListBox
-    Set lstInputs = Me.Controls.Add("Forms.ListBox.1", "lstInputs")
-    With lstInputs
-        .Left = 12: .Top = 26: .Width = 410: .Height = 140
-        .ColumnCount = 3
-        .ColumnWidths = "100;100;180"
-    End With
+    ' Update section headers with counts
+    Me.Controls("lblInputs").Caption = "Inputs (" & g_InputCount & " found):"
+    Me.Controls("lblOutputs").Caption = "Outputs (" & g_OutputCount & " found):"
+    Me.Controls("lblCorrelations").Caption = "Correlations (" & g_CorrelationCount & " defined):"
 
     ' Populate inputs
+    Dim lstInputs As MSForms.ListBox
+    Set lstInputs = Me.Controls("lstInputs")
     Dim i As Long
     For i = 0 To g_InputCount - 1
         lstInputs.AddItem
@@ -40,71 +48,24 @@ Private Sub UserForm_Initialize()
         lstInputs.List(lstInputs.ListCount - 1, 2) = g_Inputs(i).InputName
     Next i
 
-    ' Outputs section
-    Dim lblOutputs As MSForms.Label
-    Set lblOutputs = Me.Controls.Add("Forms.Label.1", "lblOutputs")
-    With lblOutputs
-        .Caption = "Outputs (" & g_OutputCount & " found):"
-        .Left = 12: .Top = 176: .Width = 200: .Height = 15
-        .Font.Bold = True
-        .Font.Size = 10
-    End With
-
+    ' Populate outputs
     Dim lstOutputs As MSForms.ListBox
-    Set lstOutputs = Me.Controls.Add("Forms.ListBox.1", "lstOutputs")
-    With lstOutputs
-        .Left = 12: .Top = 194: .Width = 410: .Height = 100
-        .ColumnCount = 2
-        .ColumnWidths = "150;250"
-    End With
-
+    Set lstOutputs = Me.Controls("lstOutputs")
     For i = 0 To g_OutputCount - 1
         lstOutputs.AddItem
         lstOutputs.List(lstOutputs.ListCount - 1, 0) = g_Outputs(i).SheetName & "!" & g_Outputs(i).CellAddress
         lstOutputs.List(lstOutputs.ListCount - 1, 1) = g_Outputs(i).OutputName
     Next i
 
-    ' Correlations section
-    Dim lblCorr As MSForms.Label
-    Set lblCorr = Me.Controls.Add("Forms.Label.1", "lblCorrelations")
-    With lblCorr
-        .Caption = "Correlations (" & g_CorrelationCount & " defined):"
-        .Left = 12: .Top = 305: .Width = 200: .Height = 15
-        .Font.Bold = True
-        .Font.Size = 10
-    End With
-
+    ' Populate correlations
     Dim lstCorr As MSForms.ListBox
-    Set lstCorr = Me.Controls.Add("Forms.ListBox.1", "lstCorrelations")
-    With lstCorr
-        .Left = 12: .Top = 323: .Width = 410: .Height = 80
-        .ColumnCount = 3
-        .ColumnWidths = "150;150;60"
-    End With
-
+    Set lstCorr = Me.Controls("lstCorrelations")
     For i = 0 To g_CorrelationCount - 1
         lstCorr.AddItem
         lstCorr.List(lstCorr.ListCount - 1, 0) = g_Inputs(g_Correlations(i).Input1Index).InputName
         lstCorr.List(lstCorr.ListCount - 1, 1) = g_Inputs(g_Correlations(i).Input2Index).InputName
         lstCorr.List(lstCorr.ListCount - 1, 2) = Format(g_Correlations(i).Coefficient, "0.00")
     Next i
-
-    ' Refresh button
-    Dim btnRefresh As MSForms.CommandButton
-    Set btnRefresh = Me.Controls.Add("Forms.CommandButton.1", "btnRefresh")
-    With btnRefresh
-        .Caption = "Refresh"
-        .Left = 250: .Top = 420: .Width = 80: .Height = 28
-    End With
-
-    ' Close button
-    Dim btnClose As MSForms.CommandButton
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close"
-        .Left = 340: .Top = 420: .Width = 80: .Height = 28
-        .Cancel = True
-    End With
 End Sub
 
 Private Function GetDistName(ByVal dt As DistributionType) As String

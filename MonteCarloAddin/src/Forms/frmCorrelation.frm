@@ -2,59 +2,45 @@
 ' Form: frmCorrelation
 ' Purpose: Define rank correlations between input distributions
 '===============================================================================
+'@FORM:500,400,Define Correlations
+'@CTRL:Label,lblInstructions,,12,8,460,30,Define Spearman rank correlations between input distributions. Values range from -1 (perfect negative) to +1 (perfect positive).
+'@SET:lblInstructions,WordWrap,True
+'@CTRL:Label,lblInput1,,12,50,60,15,Input 1:
+'@SET:lblInput1,Font.Bold,True
+'@CTRL:ComboBox,cboInput1,,80,48,200,20
+'@SET:cboInput1,Style,2
+'@CTRL:Label,lblInput2,,12,80,60,15,Input 2:
+'@SET:lblInput2,Font.Bold,True
+'@CTRL:ComboBox,cboInput2,,80,78,200,20
+'@SET:cboInput2,Style,2
+'@CTRL:Label,lblCoefficient,,12,112,70,15,Correlation:
+'@SET:lblCoefficient,Font.Bold,True
+'@CTRL:TextBox,txtCoefficient,,80,110,60,20
+'@CTRL:Label,lblRange,,150,112,100,15,(-1.0 to +1.0)
+'@SET:lblRange,ForeColor,6579300
+'@CTRL:CommandButton,btnAdd,,300,78,120,28,Add Correlation
+'@CTRL:Label,lblExisting,,12,148,150,15,Defined Correlations:
+'@SET:lblExisting,Font.Bold,True
+'@CTRL:ListBox,lstCorrelations,,12,166,460,140
+'@SET:lstCorrelations,ColumnCount,3
+'@SET:lstCorrelations,ColumnWidths,180;180;60
+'@CTRL:CommandButton,btnRemove,,340,316,120,25,Remove Selected
+'@CTRL:CommandButton,btnClose,,380,350,80,28,Close
+'@SET:btnClose,Cancel,True
+'@END
 Option Explicit
 
 Private Sub UserForm_Initialize()
-    Me.Caption = "Define Correlations"
-    Me.Width = 500
-    Me.Height = 400
-
     ' Scan for inputs first
     ScanWorkbookForFunctions
 
-    ' Instructions
-    Dim lblInstr As MSForms.Label
-    Set lblInstr = Me.Controls.Add("Forms.Label.1", "lblInstructions")
-    With lblInstr
-        .Caption = "Define Spearman rank correlations between input distributions. " & _
-                  "Values range from -1 (perfect negative) to +1 (perfect positive)."
-        .Left = 12: .Top = 8: .Width = 460: .Height = 30
-        .WordWrap = True
-    End With
-
-    ' Input 1
-    Dim lblInput1 As MSForms.Label
-    Set lblInput1 = Me.Controls.Add("Forms.Label.1", "lblInput1")
-    With lblInput1
-        .Caption = "Input 1:"
-        .Left = 12: .Top = 50: .Width = 60: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim cboInput1 As MSForms.ComboBox
-    Set cboInput1 = Me.Controls.Add("Forms.ComboBox.1", "cboInput1")
-    With cboInput1
-        .Left = 80: .Top = 48: .Width = 200: .Height = 20
-        .Style = fmStyleDropDownList
-    End With
-
-    ' Input 2
-    Dim lblInput2 As MSForms.Label
-    Set lblInput2 = Me.Controls.Add("Forms.Label.1", "lblInput2")
-    With lblInput2
-        .Caption = "Input 2:"
-        .Left = 12: .Top = 80: .Width = 60: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim cboInput2 As MSForms.ComboBox
-    Set cboInput2 = Me.Controls.Add("Forms.ComboBox.1", "cboInput2")
-    With cboInput2
-        .Left = 80: .Top = 78: .Width = 200: .Height = 20
-        .Style = fmStyleDropDownList
-    End With
+    ' Set default coefficient
+    Me.Controls("txtCoefficient").Text = "0.5"
 
     ' Populate input combos
+    Dim cboInput1 As MSForms.ComboBox, cboInput2 As MSForms.ComboBox
+    Set cboInput1 = Me.Controls("cboInput1")
+    Set cboInput2 = Me.Controls("cboInput2")
     Dim i As Long
     For i = 0 To g_InputCount - 1
         Dim entry As String
@@ -63,79 +49,15 @@ Private Sub UserForm_Initialize()
         cboInput2.AddItem entry
     Next i
 
-    ' Correlation coefficient
-    Dim lblCoeff As MSForms.Label
-    Set lblCoeff = Me.Controls.Add("Forms.Label.1", "lblCoefficient")
-    With lblCoeff
-        .Caption = "Correlation:"
-        .Left = 12: .Top = 112: .Width = 70: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim txtCoeff As MSForms.TextBox
-    Set txtCoeff = Me.Controls.Add("Forms.TextBox.1", "txtCoefficient")
-    With txtCoeff
-        .Left = 80: .Top = 110: .Width = 60: .Height = 20
-        .Text = "0.5"
-    End With
-
-    Dim lblRange As MSForms.Label
-    Set lblRange = Me.Controls.Add("Forms.Label.1", "lblRange")
-    With lblRange
-        .Caption = "(-1.0 to +1.0)"
-        .Left = 150: .Top = 112: .Width = 100: .Height = 15
-        .ForeColor = RGB(100, 100, 100)
-    End With
-
-    ' Add button
-    Dim btnAdd As MSForms.CommandButton
-    Set btnAdd = Me.Controls.Add("Forms.CommandButton.1", "btnAdd")
-    With btnAdd
-        .Caption = "Add Correlation"
-        .Left = 300: .Top = 78: .Width = 120: .Height = 28
-    End With
-
-    ' Existing correlations list
-    Dim lblExisting As MSForms.Label
-    Set lblExisting = Me.Controls.Add("Forms.Label.1", "lblExisting")
-    With lblExisting
-        .Caption = "Defined Correlations:"
-        .Left = 12: .Top = 148: .Width = 150: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim lstCorr As MSForms.ListBox
-    Set lstCorr = Me.Controls.Add("Forms.ListBox.1", "lstCorrelations")
-    With lstCorr
-        .Left = 12: .Top = 166: .Width = 460: .Height = 140
-        .ColumnCount = 3
-        .ColumnWidths = "180;180;60"
-    End With
-
     ' Load existing correlations
+    Dim lstCorr As MSForms.ListBox
+    Set lstCorr = Me.Controls("lstCorrelations")
     For i = 0 To g_CorrelationCount - 1
         lstCorr.AddItem
         lstCorr.List(lstCorr.ListCount - 1, 0) = g_Inputs(g_Correlations(i).Input1Index).InputName
         lstCorr.List(lstCorr.ListCount - 1, 1) = g_Inputs(g_Correlations(i).Input2Index).InputName
         lstCorr.List(lstCorr.ListCount - 1, 2) = Format(g_Correlations(i).Coefficient, "0.00")
     Next i
-
-    ' Remove button
-    Dim btnRemove As MSForms.CommandButton
-    Set btnRemove = Me.Controls.Add("Forms.CommandButton.1", "btnRemove")
-    With btnRemove
-        .Caption = "Remove Selected"
-        .Left = 340: .Top = 316: .Width = 120: .Height = 25
-    End With
-
-    ' Close button
-    Dim btnClose As MSForms.CommandButton
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close"
-        .Left = 380: .Top = 350: .Width = 80: .Height = 28
-        .Cancel = True
-    End With
 End Sub
 
 Private Sub btnAdd_Click()

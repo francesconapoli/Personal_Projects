@@ -3,151 +3,61 @@
 ' Purpose: Add distribution function to selected cell
 '          Mirrors @RISK's "Define Distribution" dialog
 '===============================================================================
+'@FORM:480,440,Add Input Distribution
+'@CTRL:Label,lblCell,,12,12,70,15,Target Cell:
+'@SET:lblCell,Font.Bold,True
+'@CTRL:TextBox,txtCell,,90,10,120,20
+'@CTRL:Label,lblCategory,,12,42,70,15,Category:
+'@CTRL:ComboBox,cboCategory,,90,40,160,20
+'@SET:cboCategory,Style,2
+'@CTRL:Label,lblDistType,,12,72,70,15,Distribution:
+'@CTRL:ComboBox,cboDistribution,,90,70,160,20
+'@SET:cboDistribution,Style,2
+'@CTRL:Frame,fraParams,,12,100,440,180,Parameters
+'@CTRL:Label,lblParam0,fraParams,12,20,100,15,Parameter 1:
+'@CTRL:TextBox,txtParam0,fraParams,120,18,100,20
+'@CTRL:Label,lblParamDesc0,fraParams,230,20,200,15
+'@SET:lblParamDesc0,ForeColor,6579300
+'@CTRL:Label,lblParam1,fraParams,12,55,100,15,Parameter 2:
+'@CTRL:TextBox,txtParam1,fraParams,120,53,100,20
+'@CTRL:Label,lblParamDesc1,fraParams,230,55,200,15
+'@SET:lblParamDesc1,ForeColor,6579300
+'@CTRL:Label,lblParam2,fraParams,12,90,100,15,Parameter 3:
+'@CTRL:TextBox,txtParam2,fraParams,120,88,100,20
+'@CTRL:Label,lblParamDesc2,fraParams,230,90,200,15
+'@SET:lblParamDesc2,ForeColor,6579300
+'@CTRL:Label,lblParam3,fraParams,12,125,100,15,Parameter 4:
+'@CTRL:TextBox,txtParam3,fraParams,120,123,100,20
+'@CTRL:Label,lblParamDesc3,fraParams,230,125,200,15
+'@SET:lblParamDesc3,ForeColor,6579300
+'@CTRL:Label,lblInputName,,12,290,70,15,Input Name:
+'@CTRL:TextBox,txtInputName,,90,288,160,20
+'@CTRL:Label,lblPreview,,12,320,100,15,Formula Preview:
+'@SET:lblPreview,Font.Bold,True
+'@CTRL:Label,lblFormulaPreview,,12,338,440,20,=MCNormal(0, 1)
+'@SET:lblFormulaPreview,Font.Name,Consolas
+'@SET:lblFormulaPreview,Font.Size,11
+'@SET:lblFormulaPreview,ForeColor,11534336
+'@CTRL:CommandButton,btnInsert,,250,370,90,28,Insert
+'@SET:btnInsert,Default,True
+'@CTRL:CommandButton,btnCancel,,350,370,90,28,Cancel
+'@SET:btnCancel,Cancel,True
+'@END
 Option Explicit
 
 Private Sub UserForm_Initialize()
-    Me.Caption = "Add Input Distribution"
-    Me.Width = 480
-    Me.Height = 440
+    ' Set target cell from active cell
+    If Not ActiveCell Is Nothing Then Me.Controls("txtCell").Text = ActiveCell.Address
 
-    ' Target cell
-    Dim lblCell As MSForms.Label
-    Set lblCell = Me.Controls.Add("Forms.Label.1", "lblCell")
-    With lblCell
-        .Caption = "Target Cell:"
-        .Left = 12: .Top = 12: .Width = 70: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim txtCell As MSForms.TextBox
-    Set txtCell = Me.Controls.Add("Forms.TextBox.1", "txtCell")
-    With txtCell
-        .Left = 90: .Top = 10: .Width = 120: .Height = 20
-        If Not ActiveCell Is Nothing Then .Text = ActiveCell.Address
-    End With
-
-    ' Distribution Category
-    Dim lblCat As MSForms.Label
-    Set lblCat = Me.Controls.Add("Forms.Label.1", "lblCategory")
-    With lblCat
-        .Caption = "Category:"
-        .Left = 12: .Top = 42: .Width = 70: .Height = 15
-    End With
-
+    ' Populate category combo
     Dim cboCat As MSForms.ComboBox
-    Set cboCat = Me.Controls.Add("Forms.ComboBox.1", "cboCategory")
-    With cboCat
-        .Left = 90: .Top = 40: .Width = 160: .Height = 20
-        .Style = fmStyleDropDownList
-        .AddItem "Continuous"
-        .AddItem "Discrete"
-        .AddItem "Empirical"
-        .ListIndex = 0
-    End With
+    Set cboCat = Me.Controls("cboCategory")
+    cboCat.AddItem "Continuous"
+    cboCat.AddItem "Discrete"
+    cboCat.AddItem "Empirical"
+    cboCat.ListIndex = 0
 
-    ' Distribution Type
-    Dim lblDist As MSForms.Label
-    Set lblDist = Me.Controls.Add("Forms.Label.1", "lblDistType")
-    With lblDist
-        .Caption = "Distribution:"
-        .Left = 12: .Top = 72: .Width = 70: .Height = 15
-    End With
-
-    Dim cboDist As MSForms.ComboBox
-    Set cboDist = Me.Controls.Add("Forms.ComboBox.1", "cboDistribution")
-    With cboDist
-        .Left = 90: .Top = 70: .Width = 160: .Height = 20
-        .Style = fmStyleDropDownList
-    End With
-
-    ' Parameter frame
-    Dim fraParams As MSForms.Frame
-    Set fraParams = Me.Controls.Add("Forms.Frame.1", "fraParams")
-    With fraParams
-        .Caption = "Parameters"
-        .Left = 12: .Top = 100: .Width = 440: .Height = 180
-    End With
-
-    ' Parameter labels and textboxes (up to 4 parameters)
-    Dim paramLabels As Variant
-    paramLabels = Array("Parameter 1:", "Parameter 2:", "Parameter 3:", "Parameter 4:")
-    Dim j As Long
-    For j = 0 To 3
-        Dim pl As MSForms.Label
-        Set pl = fraParams.Controls.Add("Forms.Label.1", "lblParam" & j)
-        With pl
-            .Caption = CStr(paramLabels(j))
-            .Left = 12: .Top = 20 + j * 35: .Width = 100: .Height = 15
-        End With
-
-        Dim pt As MSForms.TextBox
-        Set pt = fraParams.Controls.Add("Forms.TextBox.1", "txtParam" & j)
-        With pt
-            .Left = 120: .Top = 18 + j * 35: .Width = 100: .Height = 20
-            .Text = ""
-        End With
-
-        Dim pd As MSForms.Label
-        Set pd = fraParams.Controls.Add("Forms.Label.1", "lblParamDesc" & j)
-        With pd
-            .Caption = ""
-            .Left = 230: .Top = 20 + j * 35: .Width = 200: .Height = 15
-            .ForeColor = RGB(100, 100, 100)
-        End With
-    Next j
-
-    ' Name
-    Dim lblName As MSForms.Label
-    Set lblName = Me.Controls.Add("Forms.Label.1", "lblInputName")
-    With lblName
-        .Caption = "Input Name:"
-        .Left = 12: .Top = 290: .Width = 70: .Height = 15
-    End With
-
-    Dim txtName As MSForms.TextBox
-    Set txtName = Me.Controls.Add("Forms.TextBox.1", "txtInputName")
-    With txtName
-        .Left = 90: .Top = 288: .Width = 160: .Height = 20
-        .Text = ""
-    End With
-
-    ' Preview
-    Dim lblPreview As MSForms.Label
-    Set lblPreview = Me.Controls.Add("Forms.Label.1", "lblPreview")
-    With lblPreview
-        .Caption = "Formula Preview:"
-        .Left = 12: .Top = 320: .Width = 100: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim lblFormula As MSForms.Label
-    Set lblFormula = Me.Controls.Add("Forms.Label.1", "lblFormulaPreview")
-    With lblFormula
-        .Caption = "=MCNormal(0, 1)"
-        .Left = 12: .Top = 338: .Width = 440: .Height = 20
-        .Font.Name = "Consolas"
-        .Font.Size = 11
-        .ForeColor = RGB(0, 0, 180)
-    End With
-
-    ' Buttons
-    Dim btnInsert As MSForms.CommandButton
-    Set btnInsert = Me.Controls.Add("Forms.CommandButton.1", "btnInsert")
-    With btnInsert
-        .Caption = "Insert"
-        .Left = 250: .Top = 370: .Width = 90: .Height = 28
-        .Default = True
-    End With
-
-    Dim btnCancel As MSForms.CommandButton
-    Set btnCancel = Me.Controls.Add("Forms.CommandButton.1", "btnCancel")
-    With btnCancel
-        .Caption = "Cancel"
-        .Left = 350: .Top = 370: .Width = 90: .Height = 28
-        .Cancel = True
-    End With
-
-    ' Load distributions
+    ' Load distributions for initial category
     LoadDistributions
 End Sub
 

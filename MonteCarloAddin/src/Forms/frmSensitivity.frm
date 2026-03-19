@@ -2,120 +2,41 @@
 ' Form: frmSensitivity
 ' Purpose: Sensitivity analysis configuration and results
 '===============================================================================
+'@FORM:520,450,Sensitivity Analysis
+'@CTRL:Label,lblOutput,,12,12,90,15,Analyze Output:
+'@SET:lblOutput,Font.Bold,True
+'@CTRL:ComboBox,cboOutput,,110,10,250,20
+'@SET:cboOutput,Style,2
+'@CTRL:Frame,fraMethod,,12,40,480,90,Sensitivity Method
+'@CTRL:OptionButton,optMethod0,fraMethod,12,18,220,18,Regression Coefficients
+'@CTRL:OptionButton,optMethod1,fraMethod,242,18,220,18,Rank Correlation (Spearman)
+'@SET:optMethod1,Value,True
+'@CTRL:OptionButton,optMethod2,fraMethod,12,46,220,18,Contribution to Variance
+'@CTRL:OptionButton,optMethod3,fraMethod,242,46,220,18,Change in Output Statistic
+'@CTRL:CommandButton,btnRun,,370,140,120,28,Run Analysis
+'@CTRL:Label,lblResults,,12,145,60,15,Results:
+'@SET:lblResults,Font.Bold,True
+'@CTRL:Label,lblRSquared,,80,145,200,15
+'@CTRL:ListBox,lstResults,,12,170,480,160
+'@SET:lstResults,ColumnCount,4
+'@SET:lstResults,ColumnWidths,40;150;100;100
+'@CTRL:CommandButton,btnTornado,,12,340,110,28,Tornado Chart
+'@CTRL:CommandButton,btnSpider,,130,340,110,28,Spider Plot
+'@CTRL:CommandButton,btnExport,,248,340,110,28,Export to Sheet
+'@CTRL:CommandButton,btnClose,,410,380,80,28,Close
+'@SET:btnClose,Cancel,True
+'@END
 Option Explicit
 
 Private Sub UserForm_Initialize()
-    Me.Caption = "Sensitivity Analysis"
-    Me.Width = 520
-    Me.Height = 450
-
-    ' Output selector
-    Dim lblOutput As MSForms.Label
-    Set lblOutput = Me.Controls.Add("Forms.Label.1", "lblOutput")
-    With lblOutput
-        .Caption = "Analyze Output:"
-        .Left = 12: .Top = 12: .Width = 90: .Height = 15
-        .Font.Bold = True
-    End With
-
+    ' Populate output combo
     Dim cboOutput As MSForms.ComboBox
-    Set cboOutput = Me.Controls.Add("Forms.ComboBox.1", "cboOutput")
-    With cboOutput
-        .Left = 110: .Top = 10: .Width = 250: .Height = 20
-        .Style = fmStyleDropDownList
-    End With
-
+    Set cboOutput = Me.Controls("cboOutput")
     Dim i As Long
     For i = 0 To g_OutputCount - 1
         cboOutput.AddItem g_Outputs(i).OutputName
     Next i
     If g_OutputCount > 0 Then cboOutput.ListIndex = 0
-
-    ' Analysis method
-    Dim fraMethod As MSForms.Frame
-    Set fraMethod = Me.Controls.Add("Forms.Frame.1", "fraMethod")
-    With fraMethod
-        .Caption = "Sensitivity Method"
-        .Left = 12: .Top = 40: .Width = 480: .Height = 90
-    End With
-
-    Dim methods As Variant
-    methods = Array("Regression Coefficients", "Rank Correlation (Spearman)", _
-                   "Contribution to Variance", "Change in Output Statistic")
-    For i = 0 To 3
-        Dim opt As MSForms.OptionButton
-        Set opt = fraMethod.Controls.Add("Forms.OptionButton.1", "optMethod" & i)
-        With opt
-            .Caption = CStr(methods(i))
-            .Left = 12 + (i Mod 2) * 230
-            .Top = 18 + (i \ 2) * 28
-            .Width = 220: .Height = 18
-            If i = 1 Then .Value = True
-        End With
-    Next i
-
-    ' Run button
-    Dim btnRun As MSForms.CommandButton
-    Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
-    With btnRun
-        .Caption = "Run Analysis"
-        .Left = 370: .Top = 140: .Width = 120: .Height = 28
-    End With
-
-    ' Results
-    Dim lblResults As MSForms.Label
-    Set lblResults = Me.Controls.Add("Forms.Label.1", "lblResults")
-    With lblResults
-        .Caption = "Results:"
-        .Left = 12: .Top = 145: .Width = 60: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim lblR2 As MSForms.Label
-    Set lblR2 = Me.Controls.Add("Forms.Label.1", "lblRSquared")
-    With lblR2
-        .Caption = ""
-        .Left = 80: .Top = 145: .Width = 200: .Height = 15
-    End With
-
-    Dim lstResults As MSForms.ListBox
-    Set lstResults = Me.Controls.Add("Forms.ListBox.1", "lstResults")
-    With lstResults
-        .Left = 12: .Top = 170: .Width = 480: .Height = 160
-        .ColumnCount = 4
-        .ColumnWidths = "40;150;100;100"
-    End With
-
-    ' Chart buttons
-    Dim btnTornado As MSForms.CommandButton
-    Set btnTornado = Me.Controls.Add("Forms.CommandButton.1", "btnTornado")
-    With btnTornado
-        .Caption = "Tornado Chart"
-        .Left = 12: .Top = 340: .Width = 110: .Height = 28
-    End With
-
-    Dim btnSpider As MSForms.CommandButton
-    Set btnSpider = Me.Controls.Add("Forms.CommandButton.1", "btnSpider")
-    With btnSpider
-        .Caption = "Spider Plot"
-        .Left = 130: .Top = 340: .Width = 110: .Height = 28
-    End With
-
-    Dim btnExport As MSForms.CommandButton
-    Set btnExport = Me.Controls.Add("Forms.CommandButton.1", "btnExport")
-    With btnExport
-        .Caption = "Export to Sheet"
-        .Left = 248: .Top = 340: .Width = 110: .Height = 28
-    End With
-
-    ' Close
-    Dim btnClose As MSForms.CommandButton
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close"
-        .Left = 410: .Top = 380: .Width = 80: .Height = 28
-        .Cancel = True
-    End With
 End Sub
 
 Private Sub btnRun_Click()

@@ -2,209 +2,106 @@
 ' Form: frmResults
 ' Purpose: Results browser - shows statistics and charts for selected output
 '===============================================================================
+'@FORM:680,620,Simulation Results
+'@CTRL:Label,lblOutput,,12,12,50,15,Output:
+'@SET:lblOutput,Font.Bold,True
+'@CTRL:ComboBox,cboOutput,,65,10,250,20
+'@SET:cboOutput,Style,2
+'@CTRL:Label,lblSimInfo,,330,12,320,15
+'@CTRL:Frame,fraStats,,12,40,640,220,Statistics
+'@CTRL:Label,lblStatMean,fraStats,12,18,85,15,Mean:
+'@SET:lblStatMean,Font.Bold,True
+'@CTRL:Label,lblValMean,fraStats,100,18,100,15
+'@SET:lblValMean,TextAlign,3
+'@CTRL:Label,lblStatStdDev,fraStats,12,40,85,15,Std Deviation:
+'@SET:lblStatStdDev,Font.Bold,True
+'@CTRL:Label,lblValStdDev,fraStats,100,40,100,15
+'@SET:lblValStdDev,TextAlign,3
+'@CTRL:Label,lblStatVariance,fraStats,12,62,85,15,Variance:
+'@SET:lblStatVariance,Font.Bold,True
+'@CTRL:Label,lblValVariance,fraStats,100,62,100,15
+'@SET:lblValVariance,TextAlign,3
+'@CTRL:Label,lblStatMin,fraStats,12,84,85,15,Minimum:
+'@SET:lblStatMin,Font.Bold,True
+'@CTRL:Label,lblValMin,fraStats,100,84,100,15
+'@SET:lblValMin,TextAlign,3
+'@CTRL:Label,lblStatMax,fraStats,12,106,85,15,Maximum:
+'@SET:lblStatMax,Font.Bold,True
+'@CTRL:Label,lblValMax,fraStats,100,106,100,15
+'@SET:lblValMax,TextAlign,3
+'@CTRL:Label,lblStatMedian,fraStats,220,18,85,15,Median:
+'@SET:lblStatMedian,Font.Bold,True
+'@CTRL:Label,lblValMedian,fraStats,310,18,100,15
+'@SET:lblValMedian,TextAlign,3
+'@CTRL:Label,lblStatMode,fraStats,220,40,85,15,Mode:
+'@SET:lblStatMode,Font.Bold,True
+'@CTRL:Label,lblValMode,fraStats,310,40,100,15
+'@SET:lblValMode,TextAlign,3
+'@CTRL:Label,lblStatSkewness,fraStats,220,62,85,15,Skewness:
+'@SET:lblStatSkewness,Font.Bold,True
+'@CTRL:Label,lblValSkewness,fraStats,310,62,100,15
+'@SET:lblValSkewness,TextAlign,3
+'@CTRL:Label,lblStatKurtosis,fraStats,220,84,85,15,Kurtosis:
+'@SET:lblStatKurtosis,Font.Bold,True
+'@CTRL:Label,lblValKurtosis,fraStats,310,84,100,15
+'@SET:lblValKurtosis,TextAlign,3
+'@CTRL:Label,lblPctL0,fraStats,340,18,100,15,5th Percentile:
+'@SET:lblPctL0,Font.Bold,True
+'@CTRL:Label,lblPctV0,fraStats,450,18,100,15
+'@SET:lblPctV0,TextAlign,3
+'@CTRL:Label,lblPctL1,fraStats,340,40,100,15,10th Percentile:
+'@SET:lblPctL1,Font.Bold,True
+'@CTRL:Label,lblPctV1,fraStats,450,40,100,15
+'@SET:lblPctV1,TextAlign,3
+'@CTRL:Label,lblPctL2,fraStats,340,62,100,15,25th Percentile:
+'@SET:lblPctL2,Font.Bold,True
+'@CTRL:Label,lblPctV2,fraStats,450,62,100,15
+'@SET:lblPctV2,TextAlign,3
+'@CTRL:Label,lblPctL3,fraStats,340,84,100,15,50th Percentile:
+'@SET:lblPctL3,Font.Bold,True
+'@CTRL:Label,lblPctV3,fraStats,450,84,100,15
+'@SET:lblPctV3,TextAlign,3
+'@CTRL:Label,lblPctL4,fraStats,340,106,100,15,75th Percentile:
+'@SET:lblPctL4,Font.Bold,True
+'@CTRL:Label,lblPctV4,fraStats,450,106,100,15
+'@SET:lblPctV4,TextAlign,3
+'@CTRL:Label,lblPctL5,fraStats,340,128,100,15,90th Percentile:
+'@SET:lblPctL5,Font.Bold,True
+'@CTRL:Label,lblPctV5,fraStats,450,128,100,15
+'@SET:lblPctV5,TextAlign,3
+'@CTRL:Label,lblPctL6,fraStats,340,150,100,15,95th Percentile:
+'@SET:lblPctL6,Font.Bold,True
+'@CTRL:Label,lblPctV6,fraStats,450,150,100,15
+'@SET:lblPctV6,TextAlign,3
+'@CTRL:CommandButton,btnHistogram,,12,270,95,28,Histogram
+'@CTRL:CommandButton,btnCumulative,,115,270,95,28,Cumulative
+'@CTRL:CommandButton,btnOverlay,,218,270,95,28,Overlay
+'@CTRL:CommandButton,btnTornado,,321,270,95,28,Tornado
+'@CTRL:CommandButton,btnSpider,,424,270,95,28,Spider Plot
+'@CTRL:CommandButton,btnAllCharts,,527,270,95,28,All Charts
+'@CTRL:CommandButton,btnExportData,,12,310,120,28,Export Raw Data
+'@CTRL:CommandButton,btnStatsReport,,140,310,120,28,Statistics Report
+'@CTRL:Label,lblPreview,,12,350,200,15,Iteration Data (first 100):
+'@SET:lblPreview,Font.Bold,True
+'@CTRL:ListBox,lstIterData,,12,368,640,200
+'@SET:lstIterData,ColumnCount,2
+'@SET:lstIterData,ColumnWidths,60;100
+'@CTRL:CommandButton,btnClose,,560,310,80,28,Close
+'@SET:btnClose,Cancel,True
+'@END
 Option Explicit
 
 Private m_CurrentOutput As Long
 
 Private Sub UserForm_Initialize()
-    Me.Caption = "Simulation Results"
-    Me.Width = 680
-    Me.Height = 620
-
-    ' Output selector
-    Dim lblOutput As MSForms.Label
-    Set lblOutput = Me.Controls.Add("Forms.Label.1", "lblOutput")
-    With lblOutput
-        .Caption = "Output:"
-        .Left = 12: .Top = 12: .Width = 50: .Height = 15
-        .Font.Bold = True
-    End With
-
+    ' Populate output combo
     Dim cboOutput As MSForms.ComboBox
-    Set cboOutput = Me.Controls.Add("Forms.ComboBox.1", "cboOutput")
-    With cboOutput
-        .Left = 65: .Top = 10: .Width = 250: .Height = 20
-        .Style = fmStyleDropDownList
-    End With
-
-    ' Populate outputs
+    Set cboOutput = Me.Controls("cboOutput")
     Dim i As Long
     For i = 0 To g_OutputCount - 1
         cboOutput.AddItem g_Outputs(i).OutputName & " (" & g_Outputs(i).SheetName & "!" & g_Outputs(i).CellAddress & ")"
     Next i
     If g_OutputCount > 0 Then cboOutput.ListIndex = 0
-
-    ' Statistics frame
-    Dim fraStats As MSForms.Frame
-    Set fraStats = Me.Controls.Add("Forms.Frame.1", "fraStats")
-    With fraStats
-        .Caption = "Statistics"
-        .Left = 12: .Top = 40: .Width = 640: .Height = 220
-    End With
-
-    ' Stats labels (left column)
-    Dim statLabels As Variant
-    statLabels = Array("Mean:", "Std Deviation:", "Variance:", "Minimum:", "Maximum:", _
-                       "Median:", "Mode:", "Skewness:", "Kurtosis:")
-    Dim statNames As Variant
-    statNames = Array("lblStatMean", "lblStatStdDev", "lblStatVariance", "lblStatMin", _
-                     "lblStatMax", "lblStatMedian", "lblStatMode", "lblStatSkewness", "lblStatKurtosis")
-    Dim valNames As Variant
-    valNames = Array("lblValMean", "lblValStdDev", "lblValVariance", "lblValMin", _
-                    "lblValMax", "lblValMedian", "lblValMode", "lblValSkewness", "lblValKurtosis")
-
-    Dim y As Long
-    Dim colLeft As Long, colValLeft As Long
-    y = 18
-    For i = 0 To UBound(statLabels)
-        ' First 5 items in left column, next 4 in right column
-        If i <= 4 Then
-            colLeft = 12
-            colValLeft = 100
-        Else
-            colLeft = 220
-            colValLeft = 310
-        End If
-
-        Dim lbl As MSForms.Label
-        Set lbl = fraStats.Controls.Add("Forms.Label.1", CStr(statNames(i)))
-        With lbl
-            .Caption = CStr(statLabels(i))
-            .Left = colLeft: .Top = y: .Width = 85: .Height = 15
-            .Font.Bold = True
-        End With
-
-        Dim val As MSForms.Label
-        Set val = fraStats.Controls.Add("Forms.Label.1", CStr(valNames(i)))
-        With val
-            .Caption = ""
-            .Left = colValLeft: .Top = y: .Width = 100: .Height = 15
-            .TextAlign = fmTextAlignRight
-        End With
-
-        If i = 4 Then
-            y = 18 ' Reset y for right column
-        Else
-            y = y + 22
-        End If
-    Next i
-
-    ' Percentile labels (right column)
-    Dim pctLabels As Variant
-    pctLabels = Array("5th Percentile:", "10th Percentile:", "25th Percentile:", _
-                     "50th Percentile:", "75th Percentile:", "90th Percentile:", "95th Percentile:")
-    Dim pctValues As Variant
-    pctValues = Array(5, 10, 25, 50, 75, 90, 95)
-
-    y = 18
-    For i = 0 To UBound(pctLabels)
-        Set lbl = fraStats.Controls.Add("Forms.Label.1", "lblPctL" & i)
-        With lbl
-            .Caption = CStr(pctLabels(i))
-            .Left = 340: .Top = y: .Width = 100: .Height = 15
-            .Font.Bold = True
-        End With
-
-        Set val = fraStats.Controls.Add("Forms.Label.1", "lblPctV" & i)
-        With val
-            .Caption = ""
-            .Left = 450: .Top = y: .Width = 100: .Height = 15
-            .TextAlign = fmTextAlignRight
-        End With
-        y = y + 22
-    Next i
-
-    ' Simulation info
-    Dim lblInfo As MSForms.Label
-    Set lblInfo = Me.Controls.Add("Forms.Label.1", "lblSimInfo")
-    With lblInfo
-        .Caption = ""
-        .Left = 330: .Top = 12: .Width = 320: .Height = 15
-    End With
-
-    ' Chart buttons
-    Dim btnHistogram As MSForms.CommandButton
-    Set btnHistogram = Me.Controls.Add("Forms.CommandButton.1", "btnHistogram")
-    With btnHistogram
-        .Caption = "Histogram"
-        .Left = 12: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    Dim btnCumulative As MSForms.CommandButton
-    Set btnCumulative = Me.Controls.Add("Forms.CommandButton.1", "btnCumulative")
-    With btnCumulative
-        .Caption = "Cumulative"
-        .Left = 115: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    Dim btnOverlay As MSForms.CommandButton
-    Set btnOverlay = Me.Controls.Add("Forms.CommandButton.1", "btnOverlay")
-    With btnOverlay
-        .Caption = "Overlay"
-        .Left = 218: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    Dim btnTornado As MSForms.CommandButton
-    Set btnTornado = Me.Controls.Add("Forms.CommandButton.1", "btnTornado")
-    With btnTornado
-        .Caption = "Tornado"
-        .Left = 321: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    Dim btnSpider As MSForms.CommandButton
-    Set btnSpider = Me.Controls.Add("Forms.CommandButton.1", "btnSpider")
-    With btnSpider
-        .Caption = "Spider Plot"
-        .Left = 424: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    Dim btnAllCharts As MSForms.CommandButton
-    Set btnAllCharts = Me.Controls.Add("Forms.CommandButton.1", "btnAllCharts")
-    With btnAllCharts
-        .Caption = "All Charts"
-        .Left = 527: .Top = 270: .Width = 95: .Height = 28
-    End With
-
-    ' Export buttons
-    Dim btnExport As MSForms.CommandButton
-    Set btnExport = Me.Controls.Add("Forms.CommandButton.1", "btnExportData")
-    With btnExport
-        .Caption = "Export Raw Data"
-        .Left = 12: .Top = 310: .Width = 120: .Height = 28
-    End With
-
-    Dim btnStats As MSForms.CommandButton
-    Set btnStats = Me.Controls.Add("Forms.CommandButton.1", "btnStatsReport")
-    With btnStats
-        .Caption = "Statistics Report"
-        .Left = 140: .Top = 310: .Width = 120: .Height = 28
-    End With
-
-    ' Iteration data preview (ListBox)
-    Dim lblPreview As MSForms.Label
-    Set lblPreview = Me.Controls.Add("Forms.Label.1", "lblPreview")
-    With lblPreview
-        .Caption = "Iteration Data (first 100):"
-        .Left = 12: .Top = 350: .Width = 200: .Height = 15
-        .Font.Bold = True
-    End With
-
-    Dim lstData As MSForms.ListBox
-    Set lstData = Me.Controls.Add("Forms.ListBox.1", "lstIterData")
-    With lstData
-        .Left = 12: .Top = 368: .Width = 640: .Height = 200
-        .ColumnCount = 2
-        .ColumnWidths = "60;100"
-    End With
-
-    ' Close button
-    Dim btnClose As MSForms.CommandButton
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close"
-        .Left = 560: .Top = 310: .Width = 80: .Height = 28
-        .Cancel = True
-    End With
 
     ' Load first output
     If g_OutputCount > 0 Then LoadOutputStats 0

@@ -91,9 +91,9 @@ Public Sub InstallMCSimAddin()
         m_Errors = m_Errors & "Modules folder not found: " & modulesPath & vbCrLf
     End If
 
-    ' ---- Step 2: Build UserForms from code-only .frm files ----
-    ' The .frm files contain pure VBA code (no designer headers).
-    ' All controls are created dynamically in UserForm_Initialize.
+    ' ---- Step 2: Build UserForms from .frm files ----
+    ' The .frm files use @CTRL/@SET directives to define design-time controls.
+    ' The installer adds controls via formComp.Designer so events bind correctly.
     Dim formsPath As String
     formsPath = basePath & "\Forms"
 
@@ -256,7 +256,15 @@ Private Function VerifyComponents(vbProj As Object) As String
 End Function
 
 '===============================================================================
-' BuildFormFromCode - Creates a UserForm and injects VBA code
+' BuildFormFromCode - Creates a UserForm with design-time controls and VBA code
+'
+' The .frm files use special comment directives to define controls:
+'   '@FORM:Width,Height,Caption
+'   '@CTRL:Type,Name,Parent,Left,Top,Width,Height[,Caption]
+'   '@SET:ControlName,Property,Value
+'   '@END
+' Controls are added via formComp.Designer so they are design-time controls
+' with working event handlers. The remaining code is injected normally.
 '===============================================================================
 Private Sub BuildFormFromCode(vbProj As Object, filePath As String, fso As Object)
     Dim formName As String
@@ -264,10 +272,10 @@ Private Sub BuildFormFromCode(vbProj As Object, filePath As String, fso As Objec
     Debug.Print "Building form: " & formName
 
     ' Read and normalize the code
-    Dim codeText As String
-    codeText = ReadFileText(fso, filePath)
+    Dim fullText As String
+    fullText = ReadFileText(fso, filePath)
 
-    If Len(Trim(codeText)) = 0 Then
+    If Len(Trim(fullText)) = 0 Then
         m_Errors = m_Errors & "Form " & formName & ": File is empty" & vbCrLf
         Exit Sub
     End If
@@ -291,15 +299,12 @@ Private Sub BuildFormFromCode(vbProj As Object, filePath As String, fso As Objec
     If Err.Number <> 0 Then
         m_Errors = m_Errors & "Form " & formName & " (Name): " & Err.Description & vbCrLf
         Err.Clear
-        ' Continue anyway - form will have default name like UserForm1
     End If
     On Error GoTo 0
 
-    ' Set form caption
-    On Error Resume Next
-    formComp.Properties("Caption") = formName
-    Err.Clear
-    On Error GoTo 0
+    ' Add design-time controls from @CTRL directives and extract code
+    Dim codeText As String
+    codeText = SetupDesignerControls(formComp, fullText, formName)
 
     ' Inject the VBA code into the form's code module
     Dim cm As Object
@@ -325,6 +330,294 @@ Private Sub BuildFormFromCode(vbProj As Object, filePath As String, fso As Objec
     m_FormCount = m_FormCount + 1
     Debug.Print "  Created form: " & formName & " (" & cm.CountOfLines & " lines)"
 End Sub
+
+'===============================================================================
+' SetupDesignerControls - Parses @CTRL/@SET/@FORM directives and creates
+'   design-time controls on the form Designer surface.
+'   Returns the remaining code text (with directives stripped).
+'===============================================================================
+Private Function SetupDesignerControls(formComp As Object, ByVal txt As String, _
+    ByVal formName As String) As String
+
+    Dim lines() As String
+    lines = Split(txt, vbCrLf)
+    Dim codeLines As String
+    Dim designer As Object
+    Dim hasDirectives As Boolean
+    hasDirectives = False
+
+    Dim i As Long
+    For i = 0 To UBound(lines)
+        Dim tl As String
+        tl = Trim(lines(i))
+
+        If Left(tl, 7) = "'@FORM:" Then
+            hasDirectives = True
+        ElseIf Left(tl, 7) = "'@CTRL:" Then
+            hasDirectives = True
+        ElseIf Left(tl, 6) = "'@SET:" Then
+            hasDirectives = True
+        ElseIf tl = "'@END" Then
+            hasDirectives = True
+        End If
+    Next i
+
+    ' If no directives found, return text as-is (backwards compatible)
+    If Not hasDirectives Then
+        SetupDesignerControls = txt
+        Exit Function
+    End If
+
+    ' Get the Designer surface for adding design-time controls
+    On Error Resume Next
+    Set designer = formComp.designer
+    If designer Is Nothing Then
+        m_Errors = m_Errors & "Form " & formName & ": Cannot access Designer" & vbCrLf
+        On Error GoTo 0
+        SetupDesignerControls = txt
+        Exit Function
+    End If
+    On Error GoTo 0
+
+    ' Process directives
+    For i = 0 To UBound(lines)
+        tl = Trim(lines(i))
+
+        If Left(tl, 7) = "'@FORM:" Then
+            ParseFormDirective designer, formComp, Mid(tl, 8)
+        ElseIf Left(tl, 7) = "'@CTRL:" Then
+            ParseCtrlDirective designer, Mid(tl, 8), formName
+        ElseIf Left(tl, 6) = "'@SET:" Then
+            ParseSetDirective designer, Mid(tl, 7), formName
+        ElseIf tl = "'@END" Then
+            ' Skip
+        Else
+            codeLines = codeLines & lines(i) & vbCrLf
+        End If
+    Next i
+
+    SetupDesignerControls = codeLines
+End Function
+
+'===============================================================================
+' ParseFormDirective - Sets form Width, Height, Caption
+'   Format: Width,Height,Caption
+'===============================================================================
+Private Sub ParseFormDirective(designer As Object, formComp As Object, ByVal directive As String)
+    Dim parts() As String
+    parts = Split(directive, ",")
+
+    On Error Resume Next
+    If UBound(parts) >= 0 Then designer.Width = CSng(Trim(parts(0)))
+    If UBound(parts) >= 1 Then designer.Height = CSng(Trim(parts(1)))
+    If UBound(parts) >= 2 Then
+        ' Caption may contain commas, rejoin from index 2 onward
+        Dim cap As String
+        Dim j As Long
+        cap = Trim(parts(2))
+        For j = 3 To UBound(parts)
+            cap = cap & "," & parts(j)
+        Next j
+        formComp.Properties("Caption") = cap
+    End If
+    Err.Clear
+    On Error GoTo 0
+End Sub
+
+'===============================================================================
+' ParseCtrlDirective - Adds a control to the Designer
+'   Format: Type,Name,Parent,Left,Top,Width,Height[,Caption]
+'   Type: Label|TextBox|ComboBox|CommandButton|ListBox|Frame|OptionButton|CheckBox
+'   Parent: empty for form-level, or name of a Frame
+'===============================================================================
+Private Sub ParseCtrlDirective(designer As Object, ByVal directive As String, ByVal formName As String)
+    Dim parts() As String
+    parts = Split(directive, ",")
+    If UBound(parts) < 6 Then Exit Sub ' Need at least 7 fields
+
+    Dim ctrlType As String, ctrlName As String, parentName As String
+    ctrlType = Trim(parts(0))
+    ctrlName = Trim(parts(1))
+    parentName = Trim(parts(2))
+
+    Dim l As Single, t As Single, w As Single, h As Single
+    l = CSng(Trim(parts(3)))
+    t = CSng(Trim(parts(4)))
+    w = CSng(Trim(parts(5)))
+    h = CSng(Trim(parts(6)))
+
+    ' Caption may contain commas
+    Dim cap As String
+    If UBound(parts) >= 7 Then
+        cap = Trim(parts(7))
+        Dim j As Long
+        For j = 8 To UBound(parts)
+            cap = cap & "," & parts(j)
+        Next j
+    End If
+
+    ' Map type name to ProgID
+    Dim progId As String
+    progId = GetControlProgId(ctrlType)
+    If progId = "" Then
+        m_Errors = m_Errors & "Form " & formName & ": Unknown control type '" & ctrlType & "'" & vbCrLf
+        Exit Sub
+    End If
+
+    ' Determine parent container
+    Dim container As Object
+    If parentName = "" Then
+        Set container = designer
+    Else
+        On Error Resume Next
+        Set container = designer.Controls(parentName)
+        If container Is Nothing Then
+            m_Errors = m_Errors & "Form " & formName & ": Parent '" & parentName & _
+                "' not found for " & ctrlName & vbCrLf
+            Err.Clear
+            On Error GoTo 0
+            Exit Sub
+        End If
+        On Error GoTo 0
+    End If
+
+    ' Add the control
+    On Error Resume Next
+    Dim ctrl As Object
+    Set ctrl = container.Controls.Add(progId, ctrlName)
+    If Err.Number <> 0 Or ctrl Is Nothing Then
+        m_Errors = m_Errors & "Form " & formName & ": Failed to add " & ctrlName & _
+            " - " & Err.Description & vbCrLf
+        Err.Clear
+        On Error GoTo 0
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' Set position and size
+    ctrl.Left = l
+    ctrl.Top = t
+    ctrl.Width = w
+    ctrl.Height = h
+
+    ' Set caption if provided
+    If Len(cap) > 0 Then
+        On Error Resume Next
+        ctrl.Caption = cap
+        Err.Clear
+        On Error GoTo 0
+    End If
+End Sub
+
+'===============================================================================
+' ParseSetDirective - Sets a property on a design-time control
+'   Format: ControlName,Property,Value
+'   Supports: Font.Bold, Font.Name, Font.Size, ForeColor, Style, Default,
+'             Cancel, WordWrap, ColumnCount, ColumnWidths, TextAlign, Visible,
+'             Value, Enabled
+'===============================================================================
+Private Sub ParseSetDirective(designer As Object, ByVal directive As String, ByVal formName As String)
+    Dim parts() As String
+    parts = Split(directive, ",")
+    If UBound(parts) < 2 Then Exit Sub
+
+    Dim ctrlName As String, propName As String, propVal As String
+    ctrlName = Trim(parts(0))
+    propName = Trim(parts(1))
+    ' Value may contain commas (e.g. ColumnWidths)
+    propVal = Trim(parts(2))
+    Dim j As Long
+    For j = 3 To UBound(parts)
+        propVal = propVal & "," & parts(j)
+    Next j
+
+    ' Find the control
+    Dim ctrl As Object
+    Set ctrl = FindDesignerControl(designer, ctrlName)
+    If ctrl Is Nothing Then
+        m_Errors = m_Errors & "Form " & formName & ": @SET control '" & ctrlName & "' not found" & vbCrLf
+        Exit Sub
+    End If
+
+    ' Set the property
+    On Error Resume Next
+    Select Case LCase(propName)
+        Case "font.bold"
+            ctrl.Font.Bold = CBool(propVal)
+        Case "font.name"
+            ctrl.Font.Name = propVal
+        Case "font.size"
+            ctrl.Font.Size = CSng(propVal)
+        Case "forecolor"
+            ctrl.ForeColor = CLng(propVal)
+        Case "style"
+            ctrl.Style = CLng(propVal)
+        Case "default"
+            ctrl.Default = CBool(propVal)
+        Case "cancel"
+            ctrl.Cancel = CBool(propVal)
+        Case "wordwrap"
+            ctrl.WordWrap = CBool(propVal)
+        Case "columncount"
+            ctrl.ColumnCount = CLng(propVal)
+        Case "columnwidths"
+            ctrl.ColumnWidths = propVal
+        Case "textalign"
+            ctrl.TextAlign = CLng(propVal)
+        Case "visible"
+            ctrl.Visible = CBool(propVal)
+        Case "value"
+            ctrl.Value = CBool(propVal)
+        Case "enabled"
+            ctrl.Enabled = CBool(propVal)
+        Case Else
+            m_Errors = m_Errors & "Form " & formName & ": Unknown property '" & propName & _
+                "' for " & ctrlName & vbCrLf
+    End Select
+    If Err.Number <> 0 Then
+        m_Errors = m_Errors & "Form " & formName & ": @SET " & ctrlName & "." & propName & _
+            " failed - " & Err.Description & vbCrLf
+        Err.Clear
+    End If
+    On Error GoTo 0
+End Sub
+
+'===============================================================================
+' FindDesignerControl - Finds a control by name in the Designer or nested frames
+'===============================================================================
+Private Function FindDesignerControl(designer As Object, ByVal ctrlName As String) As Object
+    On Error Resume Next
+    ' Try form level first
+    Set FindDesignerControl = designer.Controls(ctrlName)
+    If Not FindDesignerControl Is Nothing Then Exit Function
+
+    ' Search inside frames
+    Dim ctrl As Object
+    For Each ctrl In designer.Controls
+        If TypeName(ctrl) = "Frame" Then
+            Set FindDesignerControl = ctrl.Controls(ctrlName)
+            If Not FindDesignerControl Is Nothing Then Exit Function
+        End If
+    Next ctrl
+    On Error GoTo 0
+End Function
+
+'===============================================================================
+' GetControlProgId - Maps type name to MSForms ProgID
+'===============================================================================
+Private Function GetControlProgId(ByVal typeName As String) As String
+    Select Case LCase(typeName)
+        Case "label":         GetControlProgId = "Forms.Label.1"
+        Case "textbox":       GetControlProgId = "Forms.TextBox.1"
+        Case "combobox":      GetControlProgId = "Forms.ComboBox.1"
+        Case "commandbutton": GetControlProgId = "Forms.CommandButton.1"
+        Case "listbox":       GetControlProgId = "Forms.ListBox.1"
+        Case "frame":         GetControlProgId = "Forms.Frame.1"
+        Case "optionbutton":  GetControlProgId = "Forms.OptionButton.1"
+        Case "checkbox":      GetControlProgId = "Forms.CheckBox.1"
+        Case Else:            GetControlProgId = ""
+    End Select
+End Function
 
 '===============================================================================
 ' ReadFileText - Reads a text file and normalizes line endings to vbCrLf
